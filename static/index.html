@@ -1,6 +1,7 @@
 <!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,15 +19,18 @@
     }
   </style>
 </head>
+
 <body>
   <div id="app" class="container">
+    <section class="section section-container" style="padding-bottom: 10px;">
+      <div class="box">
+        <search-games title="Search Games" @search-games-db="searchGames" :search="search" />
+      </div>
+    </section>
     <section class="section section-container" style="padding-top: 24px; padding-bottom: 5px;">
-        <h2 class="title">Games</h2>
-        <game v-for="(game, index) in games"
-            :key="`game.name-${index}`"
-            :game="game"
-            @save-game="onAddOrUpdateGame"
-            @delete-game="deleteGame" />
+      <h2 class="title">Games</h2>
+      <game v-for="(game, index) in games" :key="`game.name-${index}`" :game="game" @save-game="onAddOrUpdateGame"
+        @delete-game="deleteGame" />
     </section>
     <section class="section section-container" style="padding-bottom: 10px;">
       <div class="box">
@@ -35,35 +39,35 @@
     </section>
   </div>
   <script>
-  const AddUpdateGame = {
-    props: ['game', 'title'],
-    data () {
-      return {
-        id: this.game ? this.game.id : null,
-        publisherId: this.game ? this.game.publisherId : '',
-        name: this.game ? this.game.name : '',
-        platform: this.game ? this.game.platform : 'ios',
-        storeId: this.game ? this.game.storeId : '',
-        bundleId: this.game ? this.game.bundleId : '',
-        appVersion: this.game ? this.game.appVersion : '',
-        isPublished: this.game ? this.game.isPublished : false
-      }
-    },
-    methods: {
-      save() {
-        this.$emit('save-game', { id: this.id, publisherId: this.publisherId, name: this.name, platform: this.platform, storeId: this.storeId, bundleId: this.bundleId, appVersion: this.appVersion, isPublished: this.isPublished })
-        if (!this.id) {
-          this.publisherId = ''
-          this.name = ''
-          this.platform = 'ios'
-          this.storeId = ''
-          this.bundleId = ''
-          this.appVersion = ''
-          this.isPublished = false
+    const AddUpdateGame = {
+      props: ['game', 'title'],
+      data() {
+        return {
+          id: this.game ? this.game.id : null,
+          publisherId: this.game ? this.game.publisherId : '',
+          name: this.game ? this.game.name : '',
+          platform: this.game ? this.game.platform : 'ios',
+          storeId: this.game ? this.game.storeId : '',
+          bundleId: this.game ? this.game.bundleId : '',
+          appVersion: this.game ? this.game.appVersion : '',
+          isPublished: this.game ? this.game.isPublished : false
         }
-      }
-    },
-    template: `
+      },
+      methods: {
+        save() {
+          this.$emit('save-game', { id: this.id, publisherId: this.publisherId, name: this.name, platform: this.platform, storeId: this.storeId, bundleId: this.bundleId, appVersion: this.appVersion, isPublished: this.isPublished })
+          if (!this.id) {
+            this.publisherId = ''
+            this.name = ''
+            this.platform = 'ios'
+            this.storeId = ''
+            this.bundleId = ''
+            this.appVersion = ''
+            this.isPublished = false
+          }
+        }
+      },
+      template: `
       <form class="form" @submit.prevent="save">
         <h3 class='subtitle'>{{ title }}</h3>
         <div class="field">
@@ -125,25 +129,25 @@
         </div>
       </form>
     `
-  }
+    }
 
-  const Game = {
-    props: ['game'],
-    components: { 'add-update-game': AddUpdateGame },
-    data () {
-      return {
-        showDetail: false
-      }
-    },
-    methods: {
-      onAddOrUpdateGame(game) {
-        this.$emit('save-game', game)
+    const Game = {
+      props: ['game'],
+      components: { 'add-update-game': AddUpdateGame },
+      data() {
+        return {
+          showDetail: false
+        }
       },
-      deleteGame (game) {
-        this.$emit('delete-game', game)
-      }
-    },
-    template: `
+      methods: {
+        onAddOrUpdateGame(game) {
+          this.$emit('save-game', game)
+        },
+        deleteGame(game) {
+          this.$emit('delete-game', game)
+        }
+      },
+      template: `
       <div class="card">
         <header class="card-header">
           <p @click="showDetail = !showDetail" class="card-header-title">
@@ -160,59 +164,107 @@
         </div>
       </div>
     `
-  }
+    }
 
-  new Vue({
-    el: '#app',
-    components: { game: Game, 'add-update-game': AddUpdateGame },
-    data: {
-      games: [],
-      apiURL: 'http://localhost:3000/api/games'
-    },
-    methods: {
-      onAddOrUpdateGame (game) {
-        if (game.id) {
-          this.updateGame(game)
-        } else {
-          this.addGame(game)
+    const Search = {
+      data() {
+        return {
+          name: '', platform: ''
+        }
+      }, methods: {
+        searchGames() {
+          this.$emit('search-games-db', { name: this.name, platform: this.platform })
         }
       },
-      addGame (game) {
-        return axios.post(this.apiURL, game)
-          .then((response) => {
-            const copy = this.games.slice()
-            copy.push(response.data)
-            this.games = copy
-          })
+      template: `
+       <form class="form" @submit.prevent="searchGames">
+         <h2 class="title">Search Games</h2>
+         <div class="field">
+          <label>Name</label>
+          <div class="control">
+            <input class="input" type="text" v-model="name">
+          </div>
+        </div>
+        <div class="field">
+          <label>Platform</label>
+          <div class="control">
+            <div class="control">
+              <select v-model="platform" class="input">
+                <option value="">All</option>
+                <option>ios</option>
+                <option>android</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <div class="control">
+            <button class="button is-success">Search</button>
+          </div>
+        </div>
+      </form>
+    `
+    }
+
+    new Vue({
+      el: '#app',
+      components: { game: Game, 'add-update-game': AddUpdateGame, 'search-games': Search },
+      data: {
+        games: [],
+        search: [],
+        apiURL: 'http://localhost:3000/api/games'
       },
-      updateGame (game) {
-        return axios.put(`${this.apiURL}/${game.id}`, game)
-          .then((response) => {
-            const copy = this.games.slice()
-            const idx = copy.findIndex((c) => c.id === response.data.id)
-            copy[idx] = response.data
-            this.games = copy
-          })
+      methods: {
+        onAddOrUpdateGame(game) {
+          if (game.id) {
+            this.updateGame(game)
+          } else {
+            this.addGame(game)
+          }
+        },
+        addGame(game) {
+          return axios.post(this.apiURL, game)
+            .then((response) => {
+              const copy = this.games.slice()
+              copy.push(response.data)
+              this.games = copy
+            })
+        },
+        updateGame(game) {
+          return axios.put(`${this.apiURL}/${game.id}`, game)
+            .then((response) => {
+              const copy = this.games.slice()
+              const idx = copy.findIndex((c) => c.id === response.data.id)
+              copy[idx] = response.data
+              this.games = copy
+            })
+        },
+        deleteGame(game) {
+          console.log('deleting', game)
+          return axios.delete(`${this.apiURL}/${game.id}`)
+            .then((response) => {
+              let copy = this.games.slice()
+              const idx = copy.findIndex((c) => c.id === response.data.id)
+              copy.splice(idx, 1)
+              this.games = copy
+            })
+        },
+        searchGames(search) {
+          return axios.post(`${this.apiURL}/search`, search)
+            .then((response) => {
+              this.games = response.data
+            })
+        }
       },
-      deleteGame (game) {
-        console.log('deleting', game)
-        return axios.delete(`${this.apiURL}/${game.id}`)
+      beforeMount() {
+        axios.get(this.apiURL)
           .then((response) => {
-            let copy = this.games.slice()
-            const idx = copy.findIndex((c) => c.id === response.data.id)
-            copy.splice(idx, 1)
-            this.games = copy
+            this.games = response.data
           })
       }
-    },
-    beforeMount () {
-      axios.get(this.apiURL)
-        .then((response) => {
-          this.games = response.data
-        })
-    }
-  })
+    })
 
   </script>
 </body>
+
 </html>

@@ -66,7 +66,7 @@ describe('GET /api/games', function () {
  */
 describe('PUT /api/games/1', function () {
     let data = {
-        id : 1,
+        id: 1,
         publisherId: "999000999",
         name: "Test App Updated",
         platform: "android",
@@ -131,3 +131,64 @@ describe('GET /api/games', function () {
     });
 });
 
+/**
+ * Testing search games endpoint
+ */
+describe('POST /api/games/search', function () {
+    it('respond with json containing a list of all games', function (done) {
+        let data = {
+            name: '',
+            platform: ''
+        };
+        request(app)
+            .post('/api/games')
+            .send({
+                publisherId: "1234567890",
+                name: "Test App",
+                platform: "ios",
+                storeId: "1234",
+                bundleId: "test.bundle.id",
+                appVersion: "1.0.0",
+                isPublished: true
+            })
+            .set('Accept', 'application/json').expect('Content-Type', /json/)
+            .expect(200)
+            .end((err, result) => {
+                request(app)
+                    .post('/api/games/search')
+                    .send(data)
+                    .set('Accept', 'application/json')
+                    .expect('Content-Type', /json/)
+                    .expect(200)
+                    .end((err, result) => {
+                        if (err) return done(err);
+                        assert.strictEqual(result.body[0].publisherId, '1234567890');
+                        assert.strictEqual(result.body[0].name, 'Test App');
+                        assert.strictEqual(result.body[0].platform, 'ios');
+                        assert.strictEqual(result.body[0].storeId, '1234');
+                        assert.strictEqual(result.body[0].bundleId, 'test.bundle.id');
+                        assert.strictEqual(result.body[0].appVersion, '1.0.0');
+                        assert.strictEqual(result.body[0].isPublished, true);
+                        done();
+                    });
+            });
+    });
+
+    it('respond with json containing no games', function () {
+        let data = {
+            name: 'TOTO',
+            platform: 'android'
+        };
+        request(app)
+            .post('/api/games/search')
+            .send(data)
+            .set('Accept', 'application/json')
+            .expect('Content-Type', /json/)
+            .expect(200)
+            .end((err, result) => {
+                if (err) return done(err);
+                assert.strictEqual(result.bod, []);
+                done();
+            });
+    });
+})
