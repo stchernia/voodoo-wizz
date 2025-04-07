@@ -1,7 +1,9 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const { Op } = require('sequelize');
+const axios = require('axios');
 const db = require('./models');
+const { CANTOPEN } = require('sqlite3');
 
 const app = express();
 
@@ -68,6 +70,46 @@ app.post('/api/games/search', (req, res) => {
     .catch((err) => {
       console.log('There was an error querying games', JSON.stringify(err));
       return res.send(err);
+    });
+});
+
+app.post('/api/games/populate', (req, res) => {
+  Promise.all([
+    axios.get('https://interview-marketing-eng-dev.s3.eu-west-1.amazonaws.com/ios.top100.json'),
+    axios.get('https://interview-marketing-eng-dev.s3.eu-west-1.amazonaws.com/android.top100.json'),
+  ])
+    .then(([iosResponse, androidResponse]) => {
+      const deduplicate = (games) => {
+        const set = new Set();
+        return games.filter(game => {
+          const appId = game.app_id;
+          if (!appId || set.has(appId)) {
+            return false;
+          }
+          set.add(appId);
+          return true;
+        });
+      };
+
+      const iosGames = deduplicate(iosResponse.data.flat()).slice(0, 100);
+      const androidGames = deduplicate(androidResponse.data.flat()).slice(0, 100);
+
+      const games = [...iosGames, ...androidGames].map(game => ({
+        publisherId: game.publisher_id,
+        name: game.humanized_name,
+        platform: game.os,
+        storeId: game.app_id,
+        bundleId: game.bundle_id,
+        appVersion: game.version,
+        isPublished: true,
+      }));
+
+      return db.Game.bulkCreate(games);
+    })
+    .then(games => res.send(games))
+    .catch((error) => {
+      console.error('Failed to populate games', error);
+      res.status(500).send({ error: 'Failed to populate games', details: error.message });
     });
 });
 
