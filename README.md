@@ -62,9 +62,22 @@ Many other applications at Voodoo will use consume this API.
 #### Question 1:
 We are planning to put this project in production. According to you, what are the missing pieces to make this project production ready? 
 Please elaborate an action plan.
+```
+To me the project is not ready yet due to the following reasons:
+- It has no authentication of any form and no protection overall (rate-limiting for instance)
+- We can insert data without sanitizing it
+- Data can be duplicated
+- SQLite is not adapted for a production environment such as an internal API
+And is not full-scale ready for the following reasons (but it doesn't prevent from being released):
+- Project is poorly architectured and code is highly old-school which reduces its maintainability
+- It has to be manually launched
+
+So first and foremost I would make a proper cleanup (including refactoring), in order to have an internal tool that is both easy to understand and evolutive. Then I would add some sort of authentication or a scurisation layer. In the current state, we can insert data freely. Finally I would think about data duplication. Since we can insert same data multiple times, I would either perform upsert or simply throw an error.
+```
 
 #### Question 2:
 Let's pretend our data team is now delivering new files every day into the S3 bucket, and our service needs to ingest those files
 every day through the populate API. Could you describe a suitable solution to automate this? Feel free to propose architectural changes.
-
-
+```
+There are several ways to address this problem. We can think of either serverless solutions that make use of S3 triggers and Lambda on AWS or we can also think of a simple CRON job that fetches the unprocessed files on S3 and update the DB.
+```
